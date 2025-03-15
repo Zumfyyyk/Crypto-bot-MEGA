@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Bot - Логи системы{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Логи системы</h1>
+    <p class="text-secondary">Последние события и действия в системе</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Журнал событий</span>
+        <div class="header-actions">
+            <form action="{{ url_for('clear_logs') }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите очистить все логи?');">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Очистить логи
+                </button>
+            </form>
+            <div class="filter-dropdown">
+                <select id="log-level-filter" class="form-control">
+                    <option value="all">Все уровни</option>
+                    <option value="INFO">Информация</option>
+                    <option value="WARNING">Предупреждения</option>
+                    <option value="ERROR">Ошибки</option>
+                    <option value="DEBUG">Отладка</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="logs-table">
+                <thead>
+                    <tr>
+                        <th>Время</th>
+                        <th>Уровень</th>
+                        <th>Источник</th>
+                        <th>Сообщение</th>
+                        <th>Пользователь</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="log-entry log-{{ log.level.lower() }}">
+                        <td>{{ log.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                        <td>
+                            <span class="log-level level-{{ log.level.lower() }}">{{ log.level }}</span>
+                        </td>
+                        <td>{{ log.source if log.source else 'система' }}</td>
+                        <td>{{ log.message }}</td>
+                        <td>{{ log.user_id if log.user_id else '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">Логи отсутствуют</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Стили для таблицы логов */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table th {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        font-weight: 600;
+        text-align: left;
+        padding: 12px;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    .table-striped tr:nth-child(even) {
+        background-color: var(--bg-secondary);
+    }
+    
+    /* Стили для уровней логов */
+    .log-level {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .level-info {
+        background-color: rgba(0, 123, 255, 0.2);
+        color: #0d6efd;
+    }
+    
+    .level-warning {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+    
+    .level-error {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    .level-debug {
+        background-color: rgba(108, 117, 125, 0.2);
+        color: #6c757d;
+    }
+    
+    /* Стили для заголовка карточки */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .filter-dropdown {
+        min-width: 150px;
+    }
+    
+    /* Кнопка очистки логов */
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+    }
+    
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const logLevelFilter = document.getElementById('log-level-filter');
+        const logEntries = document.querySelectorAll('.log-entry');
+        
+        // Функция фильтрации логов
+        function filterLogs() {
+            const selectedLevel = logLevelFilter.value;
+            
+            logEntries.forEach(entry => {
+                if (selectedLevel === 'all' || entry.classList.contains('log-' + selectedLevel.toLowerCase())) {
+                    entry.style.display = 'table-row';
+                } else {
+                    entry.style.display = 'none';
+                }
+            });
+        }
+        
+        // Применение фильтра при изменении
+        logLevelFilter.addEventListener('change', filterLogs);
+    });
+</script>
+{% endblock %}

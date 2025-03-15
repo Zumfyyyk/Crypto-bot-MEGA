@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в админ-панель Crypto Bot</title>
+    <!-- Подключаем Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Подключаем Animate.css для анимаций -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Подключаем Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <!-- Подключаем наши стили -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Анимированный фон с градиентом -->
+    <div class="gradient-background"></div>
+    
+    <div class="login-container">
+        <!-- Форма логина -->
+        <div class="login-form animate__animated animate__fadeIn">
+            <div class="login-logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Crypto Bot Logo">
+            </div>
+            
+            <h1 class="login-title">Вход в админ-панель</h1>
+            
+            {% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <form method="POST" action="{{ url_for('login') }}" id="login-form">
+                <div class="form-group">
+                    <label for="username" class="form-label">Имя пользователя</label>
+                    <div class="input-group">
+                        <input type="text" id="username" name="username" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Пароль</label>
+                    <div class="input-group">
+                        <input type="password" id="password" name="password" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Переключатель темы -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="theme-toggle" class="theme-toggle" title="Переключить тему">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <span style="margin-left: 5px; color: var(--text-secondary);">Переключить тему</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript для анимаций и переключения темы -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    
+    <!-- Дополнительный JavaScript для страницы входа -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('login-form');
+        
+        loginForm.addEventListener('submit', function(e) {
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Вход...';
+        });
+    });
+    </script>
+</body>
+</html>

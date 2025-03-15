@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Bot - Поддержка{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Сообщения поддержки</h1>
+    <p class="text-secondary">Работа с обращениями пользователей</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Входящие сообщения</span>
+        <div class="header-actions">
+            <div class="filter-dropdown">
+                <select id="message-status-filter" class="form-control">
+                    <option value="all">Все сообщения</option>
+                    <option value="unread">Непрочитанные</option>
+                    <option value="answered">С ответом</option>
+                    <option value="unanswered">Без ответа</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if support_messages %}
+        <div class="support-messages">
+            {% for message in support_messages %}
+            <div class="support-message-card {% if not message.is_read %}unread{% endif %} {% if message.response %}answered{% else %}unanswered{% endif %}">
+                <div class="message-header">
+                    <div class="user-info">
+                        <span class="username">{{ message.username or 'Пользователь' }} (ID: {{ message.user_id }})</span>
+                        <span class="timestamp">{{ message.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}</span>
+                    </div>
+                    <div class="message-status">
+                        {% if not message.is_read %}
+                        <span class="status-badge unread">Новое</span>
+                        {% endif %}
+                        {% if message.response %}
+                        <span class="status-badge answered">Отвечено</span>
+                        {% else %}
+                        <span class="status-badge unanswered">Ожидает ответа</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="message-content">
+                    <div class="message-text">
+                        <p>{{ message.message }}</p>
+                    </div>
+                    
+                    {% if message.response %}
+                    <div class="response-text">
+                        <h4>Ваш ответ:</h4>
+                        <p>{{ message.response }}</p>
+                    </div>
+                    {% else %}
+                    <div class="response-form" id="response-form-{{ message.id }}">
+                        <form action="{{ url_for('respond') }}" method="POST">
+                            <input type="hidden" name="message_id" value="{{ message.id }}">
+                            <div class="form-group">
+                                <label for="response-{{ message.id }}" class="form-label">Ответ:</label>
+                                <textarea id="response-{{ message.id }}" name="response" class="form-control" rows="3" required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Отправить ответ</button>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <h3>Нет сообщений</h3>
+            <p>На данный момент сообщений от пользователей не поступало</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Стили для карточек сообщений */
+    .support-messages {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .support-message-card {
+        background-color: var(--bg-secondary);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .support-message-card:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .support-message-card.unread {
+        border-left: 4px solid var(--accent-primary);
+    }
+    
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background-color: var(--bg-primary);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .user-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .username {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .timestamp {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+    
+    .message-status {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-badge.unread {
+        background-color: var(--accent-primary);
+        color: white;
+    }
+    
+    .status-badge.answered {
+        background-color: var(--success-color);
+        color: white;
+    }
+    
+    .status-badge.unanswered {
+        background-color: var(--warning-color);
+        color: black;
+    }
+    
+    .message-content {
+        padding: 15px;
+    }
+    
+    .message-text p {
+        margin: 0;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        border-left: 3px solid var(--accent-primary);
+        color: var(--text-primary);
+    }
+    
+    .response-text {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: rgba(25, 135, 84, 0.05);
+        border-radius: 4px;
+        border-left: 3px solid var(--success-color);
+    }
+    
+    .response-text h4 {
+        font-size: 1rem;
+        color: var(--success-color);
+        margin-bottom: 8px;
+    }
+    
+    .response-text p {
+        margin: 0;
+        color: var(--text-primary);
+    }
+    
+    .response-form {
+        margin-top: 15px;
+    }
+    
+    /* Стили для пустого состояния */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 20px;
+        text-align: center;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h3 {
+        color: var(--text-primary);
+        margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+        color: var(--text-secondary);
+    }
+    
+    /* Стили для заголовка карточки */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .filter-dropdown {
+        min-width: 150px;
+    }
+    
+    /* Стили для формы ответа */
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusFilter = document.getElementById('message-status-filter');
+        const messageCards = document.querySelectorAll('.support-message-card');
+        
+        // Функция фильтрации сообщений
+        function filterMessages() {
+            const selectedStatus = statusFilter.value;
+            
+            messageCards.forEach(card => {
+                if (selectedStatus === 'all' ||
+                   (selectedStatus === 'unread' && card.classList.contains('unread')) ||
+                   (selectedStatus === 'answered' && card.classList.contains('answered')) ||
+                   (selectedStatus === 'unanswered' && card.classList.contains('unanswered'))) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        // Применение фильтра при изменении
+        statusFilter.addEventListener('change', filterMessages);
+    });
+</script>
+{% endblock %}

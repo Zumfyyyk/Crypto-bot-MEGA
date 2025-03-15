@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Bot - Панель управления{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Панель управления</h1>
+    <p class="text-secondary">Добро пожаловать, {{ current_user.username }}!</p>
+</div>
+
+<!-- Статистика -->
+<div class="stats-container">
+    <div class="stat-card animate__animated animate__fadeIn">
+        <div class="stat-label">Всего логов</div>
+        <div class="stat-value">{{ total_logs }}</div>
+        <div class="stat-icon"><i class="fas fa-list"></i></div>
+    </div>
+    
+    <div class="stat-card animate__animated animate__fadeIn" style="animation-delay: 0.1s;">
+        <div class="stat-label">Всего сообщений</div>
+        <div class="stat-value">{{ total_messages }}</div>
+        <div class="stat-icon"><i class="fas fa-envelope"></i></div>
+    </div>
+    
+    <div class="stat-card animate__animated animate__fadeIn" style="animation-delay: 0.2s;">
+        <div class="stat-label">Непрочитанные сообщения</div>
+        <div class="stat-value">{{ unread_messages }}</div>
+        <div class="stat-icon"><i class="fas fa-envelope-open"></i></div>
+    </div>
+    
+    <div class="stat-card animate__animated animate__fadeIn" style="animation-delay: 0.3s;">
+        <div class="stat-label">Статус бота</div>
+        <div class="stat-value" id="bot-status">Проверка...</div>
+        <div class="stat-icon"><i class="fas fa-robot"></i></div>
+    </div>
+</div>
+
+<!-- Управление ботом -->
+<div class="card">
+    <div class="card-header">
+        <span>Управление ботом</span>
+        <div>
+            <button id="start-bot" class="btn btn-success">
+                <i class="fas fa-play"></i> Запустить
+            </button>
+            <button id="stop-bot" class="btn btn-danger">
+                <i class="fas fa-stop"></i> Остановить
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <p>Статус бота: <span id="bot-status-text">Проверка...</span></p>
+        <div class="progress" style="height: 5px; margin-top: 10px;">
+            <div id="bot-status-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Последние логи -->
+<div class="card">
+    <div class="card-header">
+        <span>Последние логи</span>
+        <a href="{{ url_for('view_logs') }}" class="btn btn-primary">
+            <i class="fas fa-eye"></i> Все логи
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Уровень</th>
+                        <th>Сообщение</th>
+                        <th>Время</th>
+                        <th>Источник</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            {% if log.level == 'ERROR' %}
+                            <span class="badge bg-danger">{{ log.level }}</span>
+                            {% elif log.level == 'WARNING' %}
+                            <span class="badge bg-warning">{{ log.level }}</span>
+                            {% else %}
+                            <span class="badge bg-info">{{ log.level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.message }}</td>
+                        <td>{{ log.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                        <td>{{ log.source or 'н/д' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">Нет логов</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Последние сообщения -->
+<div class="card">
+    <div class="card-header">
+        <span>Последние сообщения поддержки</span>
+        <a href="{{ url_for('support') }}" class="btn btn-primary">
+            <i class="fas fa-headset"></i> Все сообщения
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Пользователь</th>
+                        <th>Сообщение</th>
+                        <th>Время</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in support_messages[:5] %}
+                    <tr>
+                        <td>{{ message.id }}</td>
+                        <td>{{ message.username or message.user_id }}</td>
+                        <td>{{ message.message[:50] }}{% if message.message|length > 50 %}...{% endif %}</td>
+                        <td>{{ message.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                        <td>
+                            {% if message.is_read %}
+                            <span class="badge bg-success">Отвечено</span>
+                            {% else %}
+                            <span class="badge bg-warning">Ожидает</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">Нет сообщений</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startBotBtn = document.getElementById('start-bot');
+        const stopBotBtn = document.getElementById('stop-bot');
+        const botStatusText = document.getElementById('bot-status-text');
+        const botStatus = document.getElementById('bot-status');
+        const botStatusBar = document.getElementById('bot-status-bar');
+        
+        // Функция для проверки статуса бота
+        function checkBotStatus() {
+            fetch('/bot_status')
+                .then(response => response.json())
+                .then(data => {
+                    updateBotUI(data.status === 'running');
+                })
+                .catch(error => {
+                    console.error('Ошибка при проверке статуса бота:', error);
+                    updateBotStatusText('Ошибка');
+                });
+        }
+        
+        // Функция для обновления UI на основе статуса бота
+        function updateBotUI(isRunning) {
+            if (isRunning) {
+                updateBotStatusText('Запущен');
+                botStatusBar.style.width = '100%';
+                botStatusBar.style.backgroundColor = 'var(--success-color)';
+                startBotBtn.disabled = true;
+                stopBotBtn.disabled = false;
+                botStatus.textContent = 'Работает';
+                botStatus.style.color = 'var(--success-color)';
+            } else {
+                updateBotStatusText('Остановлен');
+                botStatusBar.style.width = '100%';
+                botStatusBar.style.backgroundColor = 'var(--danger-color)';
+                startBotBtn.disabled = false;
+                stopBotBtn.disabled = true;
+                botStatus.textContent = 'Остановлен';
+                botStatus.style.color = 'var(--danger-color)';
+            }
+        }
+        
+        // Функция для обновления текста статуса
+        function updateBotStatusText(text) {
+            botStatusText.textContent = text;
+        }
+        
+        // Запуск бота
+        startBotBtn.addEventListener('click', function() {
+            updateBotStatusText('Запуск...');
+            botStatusBar.style.width = '50%';
+            botStatusBar.style.backgroundColor = 'var(--warning-color)';
+            
+            fetch('/start_bot', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'running') {
+                        updateBotUI(true);
+                    } else {
+                        updateBotUI(false);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при запуске бота:', error);
+                    updateBotStatusText('Ошибка запуска');
+                });
+        });
+        
+        // Остановка бота
+        stopBotBtn.addEventListener('click', function() {
+            updateBotStatusText('Остановка...');
+            botStatusBar.style.width = '50%';
+            botStatusBar.style.backgroundColor = 'var(--warning-color)';
+            
+            fetch('/stop_bot', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'stopped') {
+                        updateBotUI(false);
+                    } else {
+                        updateBotUI(true);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при остановке бота:', error);
+                    updateBotStatusText('Ошибка остановки');
+                });
+        });
+        
+        // Проверяем статус бота при загрузке страницы
+        checkBotStatus();
+        
+        // Периодически проверяем статус бота
+        setInterval(checkBotStatus, 5000);
+    });
+</script>
+{% endblock %}

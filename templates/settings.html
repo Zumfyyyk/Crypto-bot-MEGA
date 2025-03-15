@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Bot - Настройки{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Настройки</h1>
+    <p class="text-secondary">Управление параметрами системы</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Настройки интерфейса</span>
+    </div>
+    <div class="card-body">
+        <div class="row settings-row">
+            <div class="settings-label">Тема интерфейса</div>
+            <div class="settings-control">
+                <div class="theme-selector">
+                    <button id="theme-dark" class="theme-option dark-theme" data-theme="dark">
+                        <i class="fas fa-moon"></i> Темная
+                    </button>
+                    <button id="theme-light" class="theme-option light-theme" data-theme="light">
+                        <i class="fas fa-sun"></i> Светлая
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Настройки уведомлений</span>
+    </div>
+    <div class="card-body">
+        <div class="row settings-row">
+            <div class="settings-label">Telegram уведомления</div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" id="telegram-notifications" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="row settings-row">
+            <div class="settings-label">Email уведомления</div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" id="email-notifications">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Учетная запись</span>
+    </div>
+    <div class="card-body">
+        <form id="change-password-form">
+            <div class="form-group">
+                <label for="current-password" class="form-label">Текущий пароль</label>
+                <input type="password" id="current-password" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="new-password" class="form-label">Новый пароль</label>
+                <input type="password" id="new-password" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm-password" class="form-label">Подтвердите пароль</label>
+                <input type="password" id="confirm-password" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Изменить пароль</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .settings-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .settings-row:last-child {
+        border-bottom: none;
+    }
+    
+    .settings-label {
+        font-weight: 500;
+        color: var(--text-primary);
+        flex: 1;
+    }
+    
+    .settings-control {
+        flex: 1;
+        text-align: right;
+    }
+    
+    /* Переключатель */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--text-secondary);
+        transition: .4s;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+    
+    input:checked + .slider {
+        background-color: var(--accent-primary);
+    }
+    
+    input:focus + .slider {
+        box-shadow: 0 0 1px var(--accent-primary);
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    
+    .slider.round {
+        border-radius: 34px;
+    }
+    
+    .slider.round:before {
+        border-radius: 50%;
+    }
+    
+    /* Селектор темы */
+    .theme-selector {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .theme-option {
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+    }
+    
+    .theme-option:hover {
+        transform: translateY(-2px);
+    }
+    
+    .theme-option.active {
+        border-color: var(--accent-primary);
+    }
+    
+    .dark-theme.active {
+        background-color: #121212;
+        color: #ffffff;
+    }
+    
+    .light-theme.active {
+        background-color: #f8f9fa;
+        color: #212529;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const darkThemeBtn = document.getElementById('theme-dark');
+        const lightThemeBtn = document.getElementById('theme-light');
+        const telegramNotifications = document.getElementById('telegram-notifications');
+        const emailNotifications = document.getElementById('email-notifications');
+        const changePasswordForm = document.getElementById('change-password-form');
+        
+        // Устанавливаем активную тему в соответствии с текущими настройками
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        if (currentTheme === 'dark') {
+            darkThemeBtn.classList.add('active');
+        } else {
+            lightThemeBtn.classList.add('active');
+        }
+        
+        // Обработчики для кнопок выбора темы
+        darkThemeBtn.addEventListener('click', function() {
+            localStorage.setItem('theme', 'dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            darkThemeBtn.classList.add('active');
+            lightThemeBtn.classList.remove('active');
+            updateThemeToggleIcon('dark');
+        });
+        
+        lightThemeBtn.addEventListener('click', function() {
+            localStorage.setItem('theme', 'light');
+            document.documentElement.setAttribute('data-theme', 'light');
+            lightThemeBtn.classList.add('active');
+            darkThemeBtn.classList.remove('active');
+            updateThemeToggleIcon('light');
+        });
+        
+        // Функция для обновления иконки переключателя темы в навигационной панели
+        function updateThemeToggleIcon(theme) {
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.innerHTML = theme === 'light' 
+                    ? '<i class="fas fa-moon"></i>' 
+                    : '<i class="fas fa-sun"></i>';
+            }
+        }
+        
+        // Обработчик для формы изменения пароля
+        changePasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Проверка совпадения паролей
+            if (newPassword !== confirmPassword) {
+                showNotification('Пароли не совпадают', 'error');
+                return;
+            }
+            
+            // Здесь можно добавить отправку запроса на сервер для изменения пароля
+            // Пример:
+            /*
+            fetch('/change_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Пароль успешно изменен', 'success');
+                    changePasswordForm.reset();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                showNotification('Произошла ошибка при изменении пароля', 'error');
+            });
+            */
+            
+            // Временное решение для демонстрации
+            showNotification('Изменение пароля в разработке', 'info');
+            changePasswordForm.reset();
+        });
+        
+        // Функция для отображения уведомлений
+        function showNotification(message, type) {
+            const container = document.querySelector('.container');
+            const notification = document.createElement('div');
+            notification.classList.add('alert');
+            
+            switch (type) {
+                case 'success':
+                    notification.classList.add('alert-success');
+                    break;
+                case 'error':
+                    notification.classList.add('alert-danger');
+                    break;
+                case 'info':
+                    notification.classList.add('alert-info');
+                    break;
+                default:
+                    notification.classList.add('alert-info');
+            }
+            
+            notification.textContent = message;
+            container.insertBefore(notification, container.firstChild);
+            
+            // Автоматическое скрытие уведомления через 5 секунд
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

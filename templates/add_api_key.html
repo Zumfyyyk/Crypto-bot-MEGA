@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Bot - Добавление API ключа{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Добавление API ключа</h1>
+    <p class="text-secondary">Добавьте API ключ для доступа к криптовалютной бирже или Telegram бота</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Новый API ключ</span>
+        <a href="{{ url_for('api_keys') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('add_api_key') }}" method="POST">
+            <div class="form-group">
+                <label for="name" class="form-label">Название ключа</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Например: Основной Bybit" required>
+                <small class="form-text text-muted">Введите название для идентификации этого ключа</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="type" class="form-label">Тип ключа</label>
+                <select id="type" name="type" class="form-control" required onchange="updateFormText()">
+                    <option value="">Выберите тип</option>
+                    <option value="exchange">Биржа</option>
+                    <option value="bot">Бот</option>
+                </select>
+            </div>
+            
+            <div id="exchange-fields">
+                <div class="form-group">
+                    <label for="exchange" class="form-label">Биржа</label>
+                    <select id="exchange" name="exchange" class="form-control">
+                        <option value="">Выберите биржу</option>
+                        <option value="Bybit">Bybit</option>
+                        <option value="Binance">Binance</option>
+                        <option value="KuCoin">KuCoin</option>
+                        <option value="Coinbase">Coinbase</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="api_key" class="form-label" id="api_key_label">API Key</label>
+                    <input type="text" id="api_key" name="api_key" class="form-control">
+                    <small class="form-text text-muted" id="api_key_help">Публичный API ключ от вашей биржи</small>
+                </div>
+                
+                <div class="form-group" id="api_secret_group">
+                    <label for="api_secret" class="form-label">API Secret</label>
+                    <input type="password" id="api_secret" name="api_secret" class="form-control">
+                    <small class="form-text text-muted">Секретный ключ от вашей биржи (будет зашифрован)</small>
+                </div>
+                
+                <div class="form-group" id="permissions_group">
+                    <label for="permissions" class="form-label">Права доступа</label>
+                    <select id="permissions" name="permissions" class="form-control">
+                        <option value="read">Только чтение (безопасно)</option>
+                        <option value="trade">Торговля (требуется для автоматической торговли)</option>
+                        <option value="withdraw">Полный доступ (включая вывод средств)</option>
+                    </select>
+                    <small class="form-text text-muted">Рекомендуется предоставлять минимально необходимые права</small>
+                </div>
+            </div>
+            
+            <div id="bot-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="bot_api_key" class="form-label">Telegram Bot Token</label>
+                    <input type="text" id="bot_api_key" name="bot_api_key" class="form-control">
+                    <small class="form-text text-muted">Введите токен вашего Telegram бота</small>
+                </div>
+            </div>
+            
+            <div class="security-notice">
+                <h4><i class="fas fa-shield-alt"></i> Безопасность</h4>
+                <ul>
+                    <li>Ваш секретный ключ будет зашифрован перед сохранением в базе данных</li>
+                    <li>Никогда не предоставляйте доступ к выводу средств, если не используете эту функцию</li>
+                    <li>Регулярно обновляйте свои API ключи на бирже для повышения безопасности</li>
+                </ul>
+            </div>
+        </div>
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Сохранить API ключ
+                </button>
+                <a href="{{ url_for('api_keys') }}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .security-notice {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 4px;
+        background-color: rgba(23, 162, 184, 0.1);
+        border-left: 4px solid var(--accent-primary);
+    }
+    
+    .security-notice h4 {
+        color: var(--accent-primary);
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+    
+    .security-notice ul {
+        padding-left: 20px;
+        margin-bottom: 0;
+    }
+    
+    .security-notice li {
+        margin-bottom: 5px;
+        color: var(--text-secondary);
+    }
+    
+    .form-text {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-top: 5px;
+    }
+    
+    .mt-4 {
+        margin-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateFormText() {
+        const type = document.getElementById('type').value;
+        const exchangeFields = document.getElementById('exchange-fields');
+        const botFields = document.getElementById('bot-fields');
+        
+        if (type === 'exchange') {
+            exchangeFields.style.display = 'block';
+            botFields.style.display = 'none';
+        } else if (type === 'bot') {
+            exchangeFields.style.display = 'none';
+            botFields.style.display = 'block';
+        } else {
+            exchangeFields.style.display = 'none';
+            botFields.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}
